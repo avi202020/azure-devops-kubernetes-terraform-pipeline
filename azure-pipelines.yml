@@ -1,47 +1,30 @@
+# Docker
+# Build a Push Docker image
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
 trigger:
 - master
 
-# Run the same task on multiple Operating Systems
-# strategy:
-#   matrix:
-#     linux:
-#       operatingSystem: 'ubuntu-latest'
-#     mac:
-#       operatingSystem: 'macos-latest'   
-#     windows:
-#       operatingSystem: 'windows-latest'          
+resources:
+- repo: self
 
-pool:
-  # vmImage: $(operatingSystem)
-  vmImage: 'ubuntu-latest'
+variables:
+  tag: '$(Build.BuildId)'
 
 stages:
 - stage: Build
+  displayName: Build & Push image
   jobs:
-    - job: BuildJob
-      steps:
-        - bash: echo " Do the Build"
-- stage: DevDeploy
-  jobs:
-    # - job: DevDeployJob
-    #   steps:
-    #     - bash: echo " Do Dev Deploy"
-# Deployment offers far more choices than a normal job. We can also specify an environemnt.
-    - deployment: DevDeployJob
-      environment: DEV
-      strategy:
-      # Run all at once strategy used
-        runOnce:
-          deploy:
-            steps:
-              - script: echo Deploy to Dev
-- stage: QADeploy
-  jobs:
-    - deployment: QADeployJob
-      environment: QA
-      strategy:
-      # Run all at once strategy used
-        runOnce:
-          deploy:
-            steps:
-              - script: echo Deploy to QA           
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: Docker@2
+      displayName: Build and Push Image
+      inputs:
+        containerRegistry: 'mailsonymathew-dockerHub'
+        repository: 'mailsonymathew/currency-exchange-devops'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: '$(tag)'
