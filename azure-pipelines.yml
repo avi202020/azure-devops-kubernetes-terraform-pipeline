@@ -1,65 +1,47 @@
 trigger:
 - master
 
+# Run the same task on multiple Operating Systems
+# strategy:
+#   matrix:
+#     linux:
+#       operatingSystem: 'ubuntu-latest'
+#     mac:
+#       operatingSystem: 'macos-latest'   
+#     windows:
+#       operatingSystem: 'windows-latest'          
+
 pool:
+  # vmImage: $(operatingSystem)
   vmImage: 'ubuntu-latest'
 
 stages:
 - stage: Build
   jobs:
-  - job: FirstJob
-    steps:
-    - bash: echo Build FirstJob
-    - bash: echo $(PipelineLevelVariable)
-    - bash: echo $(Build.BuildNumber)
-    - bash: echo $(Build.BuildId)
-    - bash: echo $(Build.SourceBranchName)
-    - bash: echo $(Build.SourcesDirectory)
-    - bash: echo $(System.DefaultWorkingDirectory)
-    - bash: ls -R $(System.DefaultWorkingDirectory)
-    - bash: echo $(Build.ArtifactStagingDirectory)
-    - bash: java -version
-    - bash: node --version
-    - bash: python --version 
-    - bash: mvn -version 
-    - bash: ls -R $(Build.ArtifactStagingDirectory)
-    - task: CopyFiles@2
-      inputs:
-        SourceFolder: '$(System.DefaultWorkingDirectory)'
-        Contents: |
-          **/*.yaml
-          **/*.tf
-        TargetFolder: '$(Build.ArtifactStagingDirectory)'
-    - bash: ls -R $(Build.ArtifactStagingDirectory)
-    - task: PublishBuildArtifacts@1
-      inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        ArtifactName: 'drop'
-        publishLocation: 'Container'
-  # - job: SecondJob
-  #   steps:
-  #   - bash: echo Build SecondJob
-# - stage: DevDeploy
-#   variables:
-#     environment: Dev
-#   dependsOn: Build
-#   jobs:
-#   - job: DevDeployJob
-#     steps:
-#     - bash: echo $(environment)DeployJob
-# - stage: QADeploy
-#   variables:
-#     environment: QA
-#   dependsOn: Build
-#   jobs:
-#   - job: QADeployJob
-#     steps:
-#     - bash: echo $(environment)DeployJob
-# - stage: ProdDeploy
-#   dependsOn: 
-#   - DevDeploy
-#   - QADeploy
-#   jobs:
-#   - job: ProdDeployJob
-#     steps:
-#     - bash: echo ProdDeployJob
+    - job: BuildJob
+      steps:
+        - bash: echo " Do the Build"
+- stage: DevDeploy
+  jobs:
+    # - job: DevDeployJob
+    #   steps:
+    #     - bash: echo " Do Dev Deploy"
+# Deployment offers far more choices than a normal job. We can also specify an environemnt.
+    - deployment: DevDeployJob
+      environment: DEV
+      strategy:
+      # Run all at once strategy used
+        runOnce:
+          deploy:
+            steps:
+              - script: echo Deploy to Dev
+- stage: QADeploy
+  jobs:
+    - deployment: QADeployJob
+      environment: QA
+      strategy:
+      # Run all at once strategy used
+        runOnce:
+          deploy:
+            steps:
+              - script: echo Deploy to QA           
